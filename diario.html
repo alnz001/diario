@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Nuestro Diario</title>
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@500;700&family=Playfair+Display&display=swap');
+
+body{
+  margin:0;
+  height:100vh;
+  background: radial-gradient(circle,#3a0a2a,#12000a);
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  font-family:'Playfair Display',serif;
+  overflow:hidden;
+}
+
+/* corazones */
+.corazon{
+  position:absolute;
+  animation:flotar linear infinite;
+  font-size:18px;
+}
+
+@keyframes flotar{
+  from{
+    transform:translateY(100vh);
+    opacity:1;
+  }
+  to{
+    transform:translateY(-10vh);
+    opacity:0;
+  }
+}
+
+/* libro */
+.libro{
+  width:750px;
+  height:520px;
+  background:linear-gradient(to right,#f0e0c0,#fff4dc);
+  border-radius:12px;
+  box-shadow:
+  0 20px 60px rgba(0,0,0,0.7),
+  inset 0 0 20px rgba(0,0,0,0.2);
+  position:relative;
+  padding:60px;
+  animation:aparecer 1s ease;
+}
+
+@keyframes aparecer{
+  from{
+    transform:scale(0.9);
+    opacity:0;
+  }
+  to{
+    transform:scale(1);
+    opacity:1;
+  }
+}
+
+textarea{
+  width:100%;
+  height:320px;
+  border:none;
+  outline:none;
+  background:transparent;
+  font-family:'Dancing Script',cursive;
+  font-size:30px;
+  color:#1a120b;
+  line-height:1.8;
+  resize:none;
+  transition:opacity 0.3s;
+}
+
+textarea[readonly]{
+  color:#5a2a2a;
+}
+
+/* linea */
+.libro::before{
+  content:"";
+  position:absolute;
+  left:40px;
+  top:0;
+  height:100%;
+  width:2px;
+  background:#d2b48c;
+}
+
+/* botones */
+.botones{
+  position:absolute;
+  bottom:30px;
+  left:60px;
+  right:60px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+
+button{
+  padding:12px 24px;
+  border:none;
+  background:#5a2a2a;
+  color:white;
+  border-radius:6px;
+  font-size:16px;
+  cursor:pointer;
+}
+
+button:hover{
+  background:#7a3a3a;
+}
+
+/* indicador */
+.indicador{
+  position:absolute;
+  right:20px;
+  top:20px;
+  background:#fff4dc;
+  padding:10px 16px;
+  border-radius:8px;
+  box-shadow:0 5px 15px rgba(0,0,0,0.3);
+}
+
+/* info guardado */
+#infoGuardado{
+  position:absolute;
+  bottom:5px;
+  left:60px;
+  font-size:14px;
+  color:#5a2a2a;
+  font-style:italic;
+}
+
+/* portada */
+.portada{
+  position:absolute;
+  width:100%;
+  height:100%;
+  background:linear-gradient(145deg,#5a0f2e,#2a0015);
+  border-radius:12px;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  flex-direction:column;
+  color:white;
+  font-family:'Dancing Script',cursive;
+  font-size:42px;
+  cursor:pointer;
+  transition:1s;
+}
+
+.oculta{
+  transform:rotateY(-180deg);
+  opacity:0;
+  pointer-events:none;
+}
+
+.cambio{
+  opacity:0;
+}
+
+/* menu musica */
+.menu-musica{
+position:absolute;
+bottom:20px;
+right:20px;
+background:rgba(0,0,0,0.4);
+backdrop-filter:blur(10px);
+padding:10px 15px;
+border-radius:10px;
+display:flex;
+align-items:center;
+gap:10px;
+color:white;
+box-shadow:0 0 15px rgba(0,0,0,0.5);
+}
+
+.menu-musica button{
+background:#5a0f2e;
+border:none;
+color:white;
+padding:6px 12px;
+border-radius:6px;
+cursor:pointer;
+font-size:16px;
+}
+
+.menu-musica button:hover{
+background:#7a1f4a;
+}
+</style>
+</head>
+<body>
+
+<div id="corazones"></div>
+
+<div class="libro">
+
+<div class="portada" id="portada" onclick="abrirLibro()">
+Alan ❤️ Lujan
+<br>
+<span style="font-size:20px;margin-top:20px;">Click para abrir</span>
+</div>
+
+<div class="indicador" id="indicador">Página 1</div>
+
+<textarea id="contenido"></textarea>
+
+<div class="botones">
+<button onclick="anteriorPagina()">⬅ Anterior</button>
+<button onclick="guardarPagina()">💾 Guardar</button>
+<button onclick="siguientePagina()">Siguiente ➡</button>
+</div>
+
+<div id="infoGuardado">Página fija</div>
+
+</div>
+
+<!-- musica -->
+<div class="menu-musica">
+<button id="playBtn" onclick="toggleMusica()">⏸</button>
+
+<input type="range" min="0" max="1" step="0.01" value="0.5"
+oninput="cambiarVolumen(this.value)">
+
+<span id="volumenTexto">50%</span>
+</div>
+
+<audio id="musica" loop>
+<source src="./music/Wisin & Yandel - Estoy Enamorado (Official Video).MP3">
+</audio>
+
+<audio id="sonido">
+<source src="./music/page.mp3">
+</audio>
+
+<script>
+
+/* PAGINAS FIJAS */
+const paginasFijas={
+
+1:`16 de Febrero de 2026
+
+Comienza nuestro diario, nuestro primer regalo juntos,
+no soy la persona perfecta ni tampoco soy fuerte con estas cosas.
+Nada de esto es para pelear ni nada de esto es para discutir,
+Disfrutalo que te guste para expresarte algun dia y yo tambien.
+Me duele no poder hablarte me duele no poder estar con vos ahora
+mismo, hablando jugando, espero que algun dia entiendas como yo
+tambien veo las cosas, y que significa mucho para mi el que 
+tambien aproveches ese espacio que te doy para jugar conmigo
+estar conmigo. Si me decis todo el dia hablamos estamos juntos,
+es verdad pero cada dia es diferente y hoy despues de lo de ayer
+queria poder estar riendome con vos en sala hablando como esos dias.
+no solo quiero que me llames y seas la persona que nunca se calla porque
+amo que no lo hagas y en sala o jugando tampoco quiero que no lo seas,
+de esa chica que conoci cuando nos poniamos fotos juntos cuando estabamos
+ahi juntos hablando de boludeces y que le gustaba estar ahi conmigo extraño
+eso, y noto que es conmigo que te vas cuando entro xq veo las cosas. y solo
+siento que te aburro cuando estamos ahi, por algo te vas a jugar, nuevamente
+te conte como me sentia y solo me ignoraste te vi jugando y me dolio.
+No, no es solo un capricho o que tiene que juegues sino todo lo que pasa.
+Espero que te diviertas que la pases lindo, perdon x ser asi.`,
+
+2:`Quería dejar esta segunda página también,
+porque en algun momento pondre que puedas escribir y yo lo pueda ver
+por el momento solo lo vas a ver vos. Esto lo podemos leer los dos.
+Algun dia te voy a alejar con estas cosas lo se, lo presiento y 
+va a ser doloroso, soy un pendejo sentimental lastimosamente me gustaria
+poder estando jugar salir hacer otras cosas y sentirme bien sin estar bien con vos
+pero se me hace dificil porque solo estoy mal, pero me pongo x encima mio y me alegro
+que lo estes y que puedas distraerte de mi, buenas noches y que descanses te amo.
+Creo que la mejor forma de expresarme es esta haciendo codigo y escuchar musica
+lagrimeando como tontin pero feliz por que veas esto que no solo es para expresar
+sino como en algun momento un recuerdo.
+PD: La musica siento que esta siendo todo verdad
+`
+
+};
+
+let pagina=1;
+let abierto=false;
+
+const contenido=document.getElementById("contenido");
+const indicador=document.getElementById("indicador");
+const infoGuardado=document.getElementById("infoGuardado");
+
+const musica=document.getElementById("musica");
+const playBtn=document.getElementById("playBtn");
+
+musica.volume=0.5;
+
+/* abrir */
+function abrirLibro(){
+
+document.getElementById("portada").classList.add("oculta");
+
+musica.play();
+
+playBtn.innerText="⏸";
+
+abierto=true;
+
+cargar();
+
+}
+
+/* cargar */
+function cargar(){
+
+contenido.classList.add("cambio");
+
+setTimeout(()=>{
+
+if(paginasFijas[pagina]){
+
+contenido.value=paginasFijas[pagina];
+
+contenido.setAttribute("readonly",true);
+
+infoGuardado.innerText="Página escrita por Alan (fija)";
+
+}else{
+
+contenido.removeAttribute("readonly");
+
+contenido.value=localStorage.getItem("pagina"+pagina)||"";
+
+const registro=localStorage.getItem("guardadoPagina"+pagina);
+
+if(registro){
+
+const r=JSON.parse(registro);
+
+infoGuardado.innerText=
+`Último guardado: ${r.autor} • ${r.fecha} ${r.hora}`;
+
+}else{
+
+infoGuardado.innerText="Sin guardar";
+
+}
+
+}
+
+indicador.innerText="Página "+pagina;
+
+contenido.classList.remove("cambio");
+
+},200);
+
+}
+
+/* guardar */
+function guardarPagina(){
+
+if(!abierto)return;
+
+if(paginasFijas[pagina]){
+
+alert("Esta página es fija ❤️");
+
+return;
+
+}
+
+const ahora=new Date();
+
+const fecha=ahora.toLocaleDateString("es-AR");
+
+const hora=ahora.toLocaleTimeString("es-AR");
+
+let autor=localStorage.getItem("autorDiario");
+
+if(!autor){
+
+autor=prompt("¿Quién guarda? Alan o Lujan");
+
+if(!autor)return;
+
+localStorage.setItem("autorDiario",autor);
+
+}
+
+localStorage.setItem("pagina"+pagina,contenido.value);
+
+localStorage.setItem("guardadoPagina"+pagina,JSON.stringify({
+
+autor,
+fecha,
+hora
+
+}));
+
+infoGuardado.innerText=
+`Último guardado: ${autor} • ${fecha} ${hora}`;
+
+document.getElementById("sonido").play();
+
+}
+
+/* navegar */
+function siguientePagina(){
+
+if(!abierto)return;
+
+pagina++;
+
+document.getElementById("sonido").play();
+
+cargar();
+
+}
+
+function anteriorPagina(){
+
+if(!abierto)return;
+
+if(pagina>1){
+
+pagina--;
+
+document.getElementById("sonido").play();
+
+cargar();
+
+}
+
+}
+
+/* musica */
+function toggleMusica(){
+
+if(musica.paused){
+
+musica.play();
+playBtn.innerText="⏸";
+
+}else{
+
+musica.pause();
+playBtn.innerText="▶";
+
+}
+
+}
+
+function cambiarVolumen(v){
+
+musica.volume=v;
+
+document.getElementById("volumenTexto").innerText=
+Math.floor(v*100)+"%";
+
+}
+
+/* corazones */
+function corazon(){
+
+const c=document.createElement("div");
+
+c.className="corazon";
+
+c.innerHTML="❤️";
+
+c.style.left=Math.random()*100+"vw";
+
+c.style.animationDuration=(4+Math.random()*4)+"s";
+
+document.body.appendChild(c);
+
+setTimeout(()=>c.remove(),8000);
+
+}
+
+setInterval(corazon,700);
+
+cargar();
+
+</script>
+
+</body>
+</html>
